@@ -303,6 +303,12 @@ function getWeekGoals() {
   return state.weeks[wk];
 }
 
+// Sync current week's goal structure to defaultGoals so future weeks inherit changes
+function syncDefaultGoals() {
+  const goals = getWeekGoals();
+  state.defaultGoals = goals.map(g => ({ name: g.name, target: g.target }));
+}
+
 // -- Score --
 function calcScore(goals) {
   let done = 0, total = 0;
@@ -402,7 +408,7 @@ function renderGoals() {
     const commit = async () => {
       const v = inp.value.trim();
       if (v) getWeekGoals()[gi].name = v;
-      await saveState(); renderGoals(); updateScores();
+      syncDefaultGoals(); await saveState(); renderGoals(); updateScores();
     };
     inp.addEventListener('blur', commit);
     inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') inp.blur(); if (ev.key === 'Escape') { inp.value = getWeekGoals()[gi].name; inp.blur(); } });
@@ -421,12 +427,12 @@ function renderGoals() {
     g.target = nt;
     g.checks = g.checks.slice(0, nt);
     while (g.checks.length < nt) g.checks.push(false);
-    await saveState(); renderGoals(); updateScores();
+    syncDefaultGoals(); await saveState(); renderGoals(); updateScores();
   }));
 
   c.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', async e => {
     getWeekGoals().splice(+e.currentTarget.dataset.del, 1);
-    await saveState(); renderGoals(); updateScores();
+    syncDefaultGoals(); await saveState(); renderGoals(); updateScores();
   }));
 }
 
@@ -486,7 +492,7 @@ document.getElementById('addBtn').addEventListener('click', async () => {
   goals.push({ id: maxId + 1, name, target, checks: Array(target).fill(false) });
   document.getElementById('newName').value = '';
   document.getElementById('newTgt').value = 7;
-  await saveState(); renderGoals(); updateScores();
+  syncDefaultGoals(); await saveState(); renderGoals(); updateScores();
 });
 document.getElementById('newName').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('addBtn').click();
