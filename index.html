@@ -209,15 +209,9 @@
 const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAY_SHORT = ['S','M','T','W','T','F','S'];
 
-// Get day labels starting from the anchor's weekday
+// Weeks always start on Monday
 function getDayLabels() {
-  if (!state || !state.anchorStart) return ['M','T','W','T','F','S','S'];
-  const startDay = new Date(state.anchorStart).getDay(); // 0=Sun
-  const labels = [];
-  for (let i = 0; i < 7; i++) {
-    labels.push(DAY_SHORT[(startDay + i) % 7]);
-  }
-  return labels;
+  return ['M','T','W','T','F','S','S'];
 }
 
 function startOfWeek(wk) {
@@ -590,6 +584,18 @@ document.getElementById('recalBtn').addEventListener('click', () => {
     state.anchorStart = state.anchorMonday;
     delete state.anchorMonday;
     await saveState();
+  }
+  // Migration: ensure anchor lands on a Monday (weeks now start Monday).
+  // Shifts the anchor date forward to the next Monday; week numbers and all
+  // saved goals/checks/rewards stay exactly as they were.
+  if (state.anchorStart) {
+    const a = new Date(state.anchorStart);
+    if (a.getDay() !== 1) {
+      const daysToMonday = (1 - a.getDay() + 7) % 7;
+      a.setDate(a.getDate() + daysToMonday);
+      state.anchorStart = a.toISOString();
+      await saveState();
+    }
   }
   if (!state.anchorStart) {
     document.getElementById('setupOverlay').style.display = 'flex';
